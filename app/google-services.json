@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "43907640444",
+    "project_id": "campuscore-gdcp",
+    "storage_bucket": "campuscore-gdcp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:43907640444:android:9fa01e84d2217648a6adf9",
+        "android_client_info": {
+          "package_name": "com.example.campuscoret"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBeewmyo_b0v9sdAbNrXN572wiBawxLgOc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
