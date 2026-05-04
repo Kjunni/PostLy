@@ -1,0 +1,80 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function validUserProfile(userId) {
+      return isOwner(userId)
+        && request.resource.data.keys().hasOnly([
+          'username',
+          'email',
+          'bio',
+          'profileImage',
+          'createdAt'
+        ])
+        && request.resource.data.username is string
+        && request.resource.data.username.size() > 0
+        && request.resource.data.bio is string
+        && request.resource.data.email is string
+        && request.resource.data.profileImage is string
+        && request.resource.data.createdAt is timestamp;
+    }
+
+    function validPostCreate() {
+      return signedIn()
+        && request.resource.data.keys().hasOnly([
+          'userId',
+          'username',
+          'postText',
+          'postImage',
+          'timestamp',
+          'likesCount'
+        ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.username is string
+        && request.resource.data.postText is string
+        && request.resource.data.postImage is string
+        && request.resource.data.timestamp is timestamp
+        && request.resource.data.likesCount == 0;
+    }
+
+    function validLikeCountUpdate() {
+      return signedIn()
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          'likesCount',
+          'updatedAt'
+        ])
+        && request.resource.data.likesCount is int
+        && request.resource.data.likesCount >= 0;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create, update: if validUserProfile(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    match /posts/{postId} {
+      allow read: if signedIn();
+      allow create: if validPostCreate();
+      allow update: if isOwner(resource.data.userId) || validLikeCountUpdate();
+      allow delete: if isOwner(resource.data.userId);
+
+      match /likes/{userId} {
+        allow read: if signedIn();
+        allow create, update: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(['userId', 'likedAt'])
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.likedAt is timestamp;
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}
