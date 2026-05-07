@@ -37,25 +37,17 @@
             android:orientation="vertical"
             android:padding="20dp">
 
-            <ImageView
-                android:id="@+id/image_profile"
+            <TextView
+                android:id="@+id/text_profile_avatar"
                 android:layout_width="104dp"
                 android:layout_height="104dp"
                 android:background="@drawable/bg_profile_placeholder"
                 android:contentDescription="@string/profile_image_placeholder"
-                android:padding="8dp"
-                android:scaleType="centerCrop"
-                android:src="@android:drawable/ic_menu_camera" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_pick_image"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/button_pick_image"
-                app:cornerRadius="18dp"
-                app:strokeColor="@color/feed_primary" />
+                android:gravity="center"
+                android:text="@string/avatar_preview"
+                android:textColor="@color/feed_primary_dark"
+                android:textSize="28sp"
+                android:textStyle="bold" />
 
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"

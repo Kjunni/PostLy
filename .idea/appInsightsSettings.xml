@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.example.kj_updates" />
+                  <option name="mobileSdkAppId" value="1:960792407728:android:9c48fe26ac9f1897fa9575" />
+                  <option name="projectId" value="postly-d173d" />
+                  <option name="projectNumber" value="960792407728" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

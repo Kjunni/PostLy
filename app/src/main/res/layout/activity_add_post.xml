@@ -51,28 +51,6 @@
                     android:minLines="5" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <ImageView
-                android:id="@+id/image_post_preview"
-                android:layout_width="match_parent"
-                android:layout_height="220dp"
-                android:layout_marginTop="18dp"
-                android:adjustViewBounds="true"
-                android:background="@drawable/bg_auth_panel"
-                android:contentDescription="@string/post_image_placeholder"
-                android:padding="8dp"
-                android:scaleType="centerCrop"
-                android:src="@android:drawable/ic_menu_gallery" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_pick_post_image"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/button_pick_post_image"
-                app:cornerRadius="20dp"
-                app:strokeColor="@color/feed_primary" />
-
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button_submit_post"
                 style="@style/Widget.Material3.Button"

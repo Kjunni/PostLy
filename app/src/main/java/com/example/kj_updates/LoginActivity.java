@@ -28,7 +28,6 @@ public class LoginActivity extends AppCompatActivity {
         firestore = FirebaseFirestore.getInstance();
 
         binding.buttonLogin.setOnClickListener(v -> attemptLogin());
-        binding.buttonDemoLogin.setOnClickListener(v -> enterDemoMode());
         binding.textGoRegister.setOnClickListener(v ->
                 startActivity(new Intent(this, RegisterActivity.class)));
     }
@@ -36,22 +35,10 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        if (SessionManager.isDemoMode(this)) {
-            startActivity(new Intent(this, MainActivity.class));
-            finish();
-            return;
-        }
         FirebaseUser user = auth == null ? null : auth.getCurrentUser();
         if (user != null) {
             routeAuthenticatedUser(user.getUid());
         }
-    }
-
-    private void enterDemoMode() {
-        SessionManager.setDemoMode(this, true);
-        Snackbar.make(binding.getRoot(), R.string.message_demo_login, Snackbar.LENGTH_SHORT).show();
-        startActivity(new Intent(this, MainActivity.class));
-        finish();
     }
 
     private void attemptLogin() {
@@ -73,7 +60,6 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void routeAuthenticatedUser(String uid) {
-        SessionManager.setDemoMode(this, false);
         setLoading(true);
         firestore.collection("users")
                 .document(uid)

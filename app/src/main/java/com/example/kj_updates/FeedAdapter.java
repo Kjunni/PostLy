@@ -9,7 +9,6 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
 import com.example.kj_updates.databinding.ItemFeedCardBinding;
 
 import java.util.ArrayList;
@@ -21,11 +20,23 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
         void onLikeClicked(FeedItem item);
     }
 
+    public interface OnPostActionListener {
+        void onEditPost(FeedItem item);
+
+        void onDeletePost(FeedItem item);
+    }
+
     private final List<FeedItem> items = new ArrayList<>();
     private final OnLikeClickListener onLikeClickListener;
+    private final OnPostActionListener onPostActionListener;
 
-    public FeedAdapter(List<FeedItem> items, OnLikeClickListener onLikeClickListener) {
+    public FeedAdapter(
+            List<FeedItem> items,
+            OnLikeClickListener onLikeClickListener,
+            OnPostActionListener onPostActionListener
+    ) {
         this.onLikeClickListener = onLikeClickListener;
+        this.onPostActionListener = onPostActionListener;
         replaceItems(items);
     }
 
@@ -43,7 +54,7 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
                 parent,
                 false
         );
-        return new FeedViewHolder(binding, onLikeClickListener);
+        return new FeedViewHolder(binding, onLikeClickListener, onPostActionListener);
     }
 
     @Override
@@ -60,11 +71,17 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
 
         private final ItemFeedCardBinding binding;
         private final OnLikeClickListener onLikeClickListener;
+        private final OnPostActionListener onPostActionListener;
 
-        FeedViewHolder(ItemFeedCardBinding binding, OnLikeClickListener onLikeClickListener) {
+        FeedViewHolder(
+                ItemFeedCardBinding binding,
+                OnLikeClickListener onLikeClickListener,
+                OnPostActionListener onPostActionListener
+        ) {
             super(binding.getRoot());
             this.binding = binding;
             this.onLikeClickListener = onLikeClickListener;
+            this.onPostActionListener = onPostActionListener;
         }
 
         void bind(FeedItem item) {
@@ -85,6 +102,10 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
                     : ContextCompat.getColor(binding.getRoot().getContext(), R.color.feed_text_secondary);
             binding.textLikes.setTextColor(likeColor);
             binding.textLikes.setOnClickListener(v -> onLikeClickListener.onLikeClicked(item));
+            binding.buttonEditPost.setVisibility(item.isOwnedByCurrentUser() ? View.VISIBLE : View.GONE);
+            binding.buttonDeletePost.setVisibility(item.isOwnedByCurrentUser() ? View.VISIBLE : View.GONE);
+            binding.buttonEditPost.setOnClickListener(v -> onPostActionListener.onEditPost(item));
+            binding.buttonDeletePost.setOnClickListener(v -> onPostActionListener.onDeletePost(item));
 
             binding.textTitle.setVisibility(item.getTitle().isEmpty() ? View.GONE : View.VISIBLE);
             binding.textBody.setVisibility(item.getBody().isEmpty() ? View.GONE : View.VISIBLE);
@@ -100,21 +121,7 @@ public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.FeedViewHolder
                 );
             }
 
-            if (item.getImageUrl().isEmpty()) {
-                binding.imagePost.setVisibility(View.GONE);
-            } else {
-                binding.imagePost.setVisibility(View.VISIBLE);
-                binding.imagePost.setContentDescription(
-                        binding.getRoot().getContext().getString(
-                                R.string.content_description_post_image,
-                                item.getAuthor()
-                        )
-                );
-                Glide.with(binding.imagePost)
-                        .load(item.getImageUrl())
-                        .centerCrop()
-                        .into(binding.imagePost);
-            }
+            binding.imagePost.setVisibility(View.GONE);
 
             int surfaceColor = ContextCompat.getColor(binding.getRoot().getContext(), item.getColorRes());
             int badgeColor = item.getType() == FeedItem.Type.NEWS

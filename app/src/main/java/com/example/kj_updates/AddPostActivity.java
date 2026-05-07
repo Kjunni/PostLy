@@ -1,12 +1,9 @@
 package com.example.kj_updates;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -16,17 +13,12 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 
 public class AddPostActivity extends AppCompatActivity {
 
     private ActivityAddPostBinding binding;
     private FirebaseAuth auth;
     private FirebaseFirestore firestore;
-    private FirebaseStorage storage;
-    private Uri selectedImageUri;
-    private ActivityResultLauncher<String> imagePickerLauncher;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -36,30 +28,11 @@ public class AddPostActivity extends AppCompatActivity {
 
         auth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance();
 
-        imagePickerLauncher = registerForActivityResult(
-                new ActivityResultContracts.GetContent(),
-                uri -> {
-                    if (uri != null) {
-                        selectedImageUri = uri;
-                        binding.imagePostPreview.setImageURI(uri);
-                    } else {
-                        showMessage(R.string.message_choose_image_failed);
-                    }
-                }
-        );
-
-        binding.buttonPickPostImage.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
         binding.buttonSubmitPost.setOnClickListener(v -> submitPost());
     }
 
     private void submitPost() {
-        if (SessionManager.isDemoMode(this)) {
-            showMessage(R.string.message_demo_post_blocked);
-            return;
-        }
-
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
             showMessage(R.string.message_auth_required);
@@ -69,7 +42,7 @@ public class AddPostActivity extends AppCompatActivity {
         }
 
         String postText = String.valueOf(binding.inputPostText.getText()).trim();
-        if (postText.isEmpty() && selectedImageUri == null) {
+        if (postText.isEmpty()) {
             showMessage(R.string.message_post_needs_content);
             return;
         }
@@ -93,28 +66,7 @@ public class AddPostActivity extends AppCompatActivity {
 
     private void createPostRecord(String userId, String username, String postText) {
         String postId = firestore.collection("posts").document().getId();
-
-        if (selectedImageUri == null) {
-            savePostDocument(postId, userId, username, postText, "");
-            return;
-        }
-
-        StorageReference imageRef = storage.getReference()
-                .child("post_images")
-                .child(postId + ".jpg");
-
-        imageRef.putFile(selectedImageUri)
-                .continueWithTask(task -> {
-                    if (!task.isSuccessful() && task.getException() != null) {
-                        throw task.getException();
-                    }
-                    return imageRef.getDownloadUrl();
-                })
-                .addOnSuccessListener(uri -> savePostDocument(postId, userId, username, postText, uri.toString()))
-                .addOnFailureListener(e -> {
-                    setLoading(false);
-                    showMessage(e.getLocalizedMessage());
-                });
+        savePostDocument(postId, userId, username, postText, "");
     }
 
     private void savePostDocument(
@@ -149,7 +101,6 @@ public class AddPostActivity extends AppCompatActivity {
 
     private void setLoading(boolean loading) {
         binding.progressPost.setVisibility(loading ? View.VISIBLE : View.GONE);
-        binding.buttonPickPostImage.setEnabled(!loading);
         binding.buttonSubmitPost.setEnabled(!loading);
     }
 

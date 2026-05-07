@@ -24,7 +24,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class git MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity {
 
     private AppBarConfiguration appBarConfiguration;
     private ActivityMainBinding binding;
@@ -36,8 +36,7 @@ public class git MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         auth = FirebaseAuth.getInstance();
 
-        boolean demoMode = SessionManager.isDemoMode(this);
-        if (!demoMode && auth.getCurrentUser() == null) {
+        if (auth.getCurrentUser() == null) {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
             return;
@@ -87,7 +86,6 @@ public class git MainActivity extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_logout) {
-            SessionManager.setDemoMode(this, false);
             auth.signOut();
             startActivity(new Intent(this, LoginActivity.class));
             finish();

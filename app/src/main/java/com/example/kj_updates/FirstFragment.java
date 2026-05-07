@@ -2,11 +2,14 @@ package com.example.kj_updates;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -71,11 +74,7 @@ public class FirstFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        if (SessionManager.isDemoMode(requireContext())) {
-            showDemoFeed();
-        } else {
-            observePosts();
-        }
+        observePosts();
     }
 
     private void setupStories() {
@@ -93,7 +92,17 @@ public class FirstFragment extends Fragment {
     }
 
     private void setupFeed() {
-        feedAdapter = new FeedAdapter(new ArrayList<>(), this::toggleLike);
+        feedAdapter = new FeedAdapter(new ArrayList<>(), this::toggleLike, new FeedAdapter.OnPostActionListener() {
+            @Override
+            public void onEditPost(FeedItem item) {
+                showEditPostDialog(item);
+            }
+
+            @Override
+            public void onDeletePost(FeedItem item) {
+                showDeletePostDialog(item);
+            }
+        });
         binding.recyclerFeed.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.recyclerFeed.setAdapter(feedAdapter);
         binding.textFeedStatus.setText(R.string.feed_loading);
@@ -116,7 +125,9 @@ public class FirstFragment extends Fragment {
                     }
 
                     if (error != null) {
-                        showDemoFeed();
+                        feedAdapter.replaceItems(new ArrayList<>());
+                        binding.textFeedStatus.setText(R.string.feed_empty);
+                        binding.textFeedStatus.setVisibility(View.VISIBLE);
                         Snackbar.make(binding.getRoot(), error.getLocalizedMessage(), Snackbar.LENGTH_LONG).show();
                         return;
                     }
@@ -172,15 +183,15 @@ public class FirstFragment extends Fragment {
     }
 
     private FeedItem toFeedItem(DocumentSnapshot document, boolean likedByCurrentUser) {
+        FirebaseUser currentUser = auth == null ? null : auth.getCurrentUser();
+        String userId = document.getString("userId");
         String username = document.getString("username");
         String postText = document.getString("postText");
-        String postImage = document.getString("postImage");
         Long likesCount = document.getLong("likesCount");
         Timestamp timestamp = document.getTimestamp("timestamp");
 
         String safeUsername = username == null || username.trim().isEmpty() ? "User" : username.trim();
         String safePostText = postText == null ? "" : postText.trim();
-        String safeImage = postImage == null ? "" : postImage.trim();
         int safeLikes = likesCount == null ? 0 : likesCount.intValue();
 
         String title = safePostText.length() > 42 ? safePostText.substring(0, 42) + "..." : safePostText;
@@ -191,28 +202,101 @@ public class FirstFragment extends Fragment {
 
         return new FeedItem(
                 document.getId(),
+                userId == null ? "" : userId,
                 FeedItem.Type.SOCIAL,
                 safeUsername,
                 buildRelativeTime(timestamp),
                 title,
                 body,
-                safeImage.isEmpty() ? "Fresh post" : "Photo update",
-                safeImage,
+                "Fresh post",
                 initialsFor(safeUsername),
                 safeLikes,
                 0,
                 0,
                 colorForAuthor(safeUsername),
-                likedByCurrentUser
+                likedByCurrentUser,
+                currentUser != null && currentUser.getUid().equals(userId)
         );
     }
 
-    private void toggleLike(FeedItem item) {
-        if (SessionManager.isDemoMode(requireContext())) {
-            Snackbar.make(binding.getRoot(), R.string.message_demo_like_blocked, Snackbar.LENGTH_LONG).show();
+    private void showEditPostDialog(FeedItem item) {
+        if (binding == null) {
             return;
         }
 
+        EditText input = new EditText(requireContext());
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        input.setMinLines(3);
+        input.setText(item.getBody());
+        input.setSelection(input.getText().length());
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.dialog_edit_post_title)
+                .setView(input)
+                .setPositiveButton(R.string.button_save, (dialog, which) -> updatePost(item, String.valueOf(input.getText()).trim()))
+                .setNegativeButton(R.string.button_cancel, null)
+                .show();
+    }
+
+    private void updatePost(FeedItem item, String updatedText) {
+        if (binding == null) {
+            return;
+        }
+
+        if (updatedText.isEmpty()) {
+            Snackbar.make(binding.getRoot(), R.string.message_post_needs_content, Snackbar.LENGTH_LONG).show();
+            return;
+        }
+
+        firestore.collection("posts")
+                .document(item.getPostId())
+                .update("postText", updatedText, "updatedAt", FieldValue.serverTimestamp())
+                .addOnSuccessListener(unused -> {
+                    if (binding != null) {
+                        Snackbar.make(binding.getRoot(), R.string.message_post_updated, Snackbar.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (binding != null) {
+                        Snackbar.make(binding.getRoot(), e.getLocalizedMessage(), Snackbar.LENGTH_LONG).show();
+                    }
+                });
+    }
+
+    private void showDeletePostDialog(FeedItem item) {
+        if (binding == null) {
+            return;
+        }
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.dialog_delete_post_title)
+                .setMessage(R.string.dialog_delete_post_message)
+                .setPositiveButton(R.string.action_delete, (dialog, which) -> deletePost(item))
+                .setNegativeButton(R.string.button_cancel, null)
+                .show();
+    }
+
+    private void deletePost(FeedItem item) {
+        if (binding == null) {
+            return;
+        }
+
+        firestore.collection("posts")
+                .document(item.getPostId())
+                .delete()
+                .addOnSuccessListener(unused -> {
+                    if (binding != null) {
+                        Snackbar.make(binding.getRoot(), R.string.message_post_deleted, Snackbar.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (binding != null) {
+                        Snackbar.make(binding.getRoot(), e.getLocalizedMessage(), Snackbar.LENGTH_LONG).show();
+                    }
+                });
+    }
+
+    private void toggleLike(FeedItem item) {
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
             Snackbar.make(binding.getRoot(), R.string.message_like_auth_required, Snackbar.LENGTH_LONG).show();
@@ -247,87 +331,6 @@ public class FirstFragment extends Fragment {
                 Snackbar.make(binding.getRoot(), e.getLocalizedMessage(), Snackbar.LENGTH_LONG).show();
             }
         });
-    }
-
-    private void showDemoFeed() {
-        if (binding == null) {
-            return;
-        }
-
-        if (postListener != null) {
-            postListener.remove();
-            postListener = null;
-        }
-
-        List<FeedItem> feedItems = Arrays.asList(
-                new FeedItem(
-                        "demo-kj",
-                        FeedItem.Type.SOCIAL,
-                        "Killer Junaid",
-                        "@killerjunaid • 12m",
-                        "Late-night mockups turned into a campus event kit",
-                        "We tested the new volunteer poster set at the student center and the QR check-ins were smooth. Uploading the template pack tonight.",
-                        "Design Sprint",
-                        "",
-                        "KJ",
-                        84,
-                        17,
-                        6,
-                        R.color.feed_story_rose,
-                        false
-                ),
-                new FeedItem(
-                        "demo-ja",
-                        FeedItem.Type.SOCIAL,
-                        "Jamsheed",
-                        "@jamsheed • 28m",
-                        "Evening bus route changes are driving a spike in live community updates",
-                        "Commuters are sharing stop-by-stop delays, alternate pickup points, and rider photos. The transport desk says a formal schedule refresh is expected before 8 PM.",
-                        "Transit Watch",
-                        "",
-                        "JA",
-                        210,
-                        48,
-                        31,
-                        R.color.feed_story_gold,
-                        false
-                ),
-                new FeedItem(
-                        "demo-ar",
-                        FeedItem.Type.SOCIAL,
-                        "Arbeen",
-                        "@arbeen • 43m",
-                        "We just opened beta signups for the neighborhood repair map",
-                        "The idea is simple: pin a streetlight, crossing, or water issue and let nearby residents confirm status in-thread instead of sending ten separate messages.",
-                        "Beta Launch",
-                        "",
-                        "AR",
-                        126,
-                        22,
-                        14,
-                        R.color.feed_story_blue,
-                        false
-                ),
-                new FeedItem(
-                        "demo-sb",
-                        FeedItem.Type.SOCIAL,
-                        "Sakib Bot",
-                        "@sakibbot • 1h",
-                        "Student creators are turning short-form updates into a local news habit",
-                        "Mini explainers, eyewitness clips, and one-paragraph summaries are outperforming long posts across several campus and district circles this afternoon.",
-                        "Creator Economy",
-                        "",
-                        "SB",
-                        173,
-                        39,
-                        24,
-                        R.color.feed_story_green,
-                        false
-                )
-        );
-
-        feedAdapter.replaceItems(feedItems);
-        binding.textFeedStatus.setVisibility(View.GONE);
     }
 
     private String buildRelativeTime(Timestamp timestamp) {

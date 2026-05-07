@@ -1,12 +1,11 @@
 package com.example.kj_updates;
 
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -16,17 +15,12 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 
 public class ProfileSetupActivity extends AppCompatActivity {
 
     private ActivityProfileSetupBinding binding;
     private FirebaseAuth auth;
     private FirebaseFirestore firestore;
-    private FirebaseStorage storage;
-    private Uri selectedImageUri;
-    private ActivityResultLauncher<String> imagePickerLauncher;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -36,19 +30,6 @@ public class ProfileSetupActivity extends AppCompatActivity {
 
         auth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance();
-
-        imagePickerLauncher = registerForActivityResult(
-                new ActivityResultContracts.GetContent(),
-                uri -> {
-                    if (uri != null) {
-                        selectedImageUri = uri;
-                        binding.imageProfile.setImageURI(uri);
-                    } else {
-                        showMessage(R.string.message_choose_image_failed);
-                    }
-                }
-        );
 
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
@@ -58,7 +39,20 @@ public class ProfileSetupActivity extends AppCompatActivity {
             return;
         }
 
-        binding.buttonPickImage.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
+        binding.inputUsername.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                binding.textProfileAvatar.setText(initialsFor(String.valueOf(s)));
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        });
         binding.buttonSaveProfile.setOnClickListener(v -> saveProfile(user));
     }
 
@@ -72,27 +66,7 @@ public class ProfileSetupActivity extends AppCompatActivity {
         }
 
         setLoading(true);
-        if (selectedImageUri == null) {
-            saveUserDocument(user, username, bio, "");
-            return;
-        }
-
-        StorageReference imageRef = storage.getReference()
-                .child("profile_images")
-                .child(user.getUid() + ".jpg");
-
-        imageRef.putFile(selectedImageUri)
-                .continueWithTask(task -> {
-                    if (!task.isSuccessful() && task.getException() != null) {
-                        throw task.getException();
-                    }
-                    return imageRef.getDownloadUrl();
-                })
-                .addOnSuccessListener(uri -> saveUserDocument(user, username, bio, uri.toString()))
-                .addOnFailureListener(e -> {
-                    setLoading(false);
-                    showMessage(e.getLocalizedMessage());
-                });
+        saveUserDocument(user, username, bio, "");
     }
 
     private void saveUserDocument(FirebaseUser user, String username, String bio, String profileImageUrl) {
@@ -122,7 +96,25 @@ public class ProfileSetupActivity extends AppCompatActivity {
     private void setLoading(boolean loading) {
         binding.progressProfile.setVisibility(loading ? View.VISIBLE : View.GONE);
         binding.buttonSaveProfile.setEnabled(!loading);
-        binding.buttonPickImage.setEnabled(!loading);
+    }
+
+    private String initialsFor(String name) {
+        String trimmedName = name == null ? "" : name.trim();
+        if (trimmedName.isEmpty()) {
+            return getString(R.string.avatar_preview);
+        }
+
+        String[] parts = trimmedName.split("\\s+");
+        StringBuilder initials = new StringBuilder();
+        for (String part : parts) {
+            if (!part.isEmpty()) {
+                initials.append(Character.toUpperCase(part.charAt(0)));
+            }
+            if (initials.length() == 2) {
+                break;
+            }
+        }
+        return initials.length() == 0 ? getString(R.string.avatar_preview) : initials.toString();
     }
 
     private void showMessage(int resId) {

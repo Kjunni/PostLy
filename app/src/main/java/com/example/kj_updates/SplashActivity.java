@@ -26,11 +26,6 @@ public class SplashActivity extends AppCompatActivity {
         auth = FirebaseAuth.getInstance();
         firestore = FirebaseFirestore.getInstance();
 
-        if (SessionManager.isDemoMode(this)) {
-            open(MainActivity.class);
-            return;
-        }
-
         FirebaseUser user = auth.getCurrentUser();
         if (user == null) {
             open(LoginActivity.class);
