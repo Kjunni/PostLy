@@ -1,6 +1,7 @@
 <resources>
-    <string name="app_name">Pulse Social</string>
+    <string name="app_name">PostLy</string>
     <string name="action_logout">Logout</string>
+    <string name="action_profile">My Profile</string>
     <string name="action_edit">Edit</string>
     <string name="action_delete">Delete</string>
     <string name="first_fragment_label">Your Feed</string>
@@ -79,4 +80,7 @@
     <string name="dialog_delete_post_message">This post will be removed from the feed.</string>
     <string name="button_save">Save</string>
     <string name="button_cancel">Cancel</string>
+
+    <!-- Google Auth (Placeholder, will be overwritten by google-services plugin) -->
+    <string name="default_web_client_id" translatable="false">YOUR_WEB_CLIENT_ID_HERE</string>
 </resources>

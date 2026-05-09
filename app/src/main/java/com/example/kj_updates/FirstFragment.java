@@ -31,7 +31,7 @@ import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.Transaction;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -78,17 +78,41 @@ public class FirstFragment extends Fragment {
     }
 
     private void setupStories() {
-        List<StoryItem> stories = Arrays.asList(
-                new StoryItem("Killer Junaid", "KJ", R.color.feed_story_blue),
-                new StoryItem("Jamsheed", "JA", R.color.feed_story_gold),
-                new StoryItem("Arbeen", "AR", R.color.feed_story_rose),
-                new StoryItem("Sakib Bot", "SB", R.color.feed_story_green)
-        );
-
         binding.recyclerStories.setLayoutManager(
                 new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         );
-        binding.recyclerStories.setAdapter(new StoryAdapter(stories));
+        observeStories();
+    }
+
+    private void observeStories() {
+        long twentyFourHoursAgo = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(24);
+        Timestamp timestampLimit = new Timestamp(new java.util.Date(twentyFourHoursAgo));
+
+        firestore.collection("stories")
+                .whereGreaterThan("timestamp", timestampLimit)
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .addSnapshotListener((value, error) -> {
+                    if (binding == null) return;
+                    
+                    List<StoryItem> stories = new ArrayList<>();
+                    // Add "Add Story" item at the beginning
+                    stories.add(new StoryItem(null, null, "Add Story", null, null));
+
+                    if (value != null && !value.isEmpty()) {
+                        for (DocumentSnapshot doc : value.getDocuments()) {
+                            StoryItem item = new StoryItem(
+                                    doc.getId(),
+                                    doc.getString("userId"),
+                                    doc.getString("username"),
+                                    doc.getString("storyText"),
+                                    doc.getTimestamp("timestamp")
+                            );
+                            item.setColorRes(colorForAuthor(item.getUsername()));
+                            stories.add(item);
+                        }
+                    }
+                    binding.recyclerStories.setAdapter(new StoryAdapter(stories));
+                });
     }
 
     private void setupFeed() {

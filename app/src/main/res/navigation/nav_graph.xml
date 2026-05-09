@@ -25,4 +25,9 @@
             android:id="@+id/action_SecondFragment_to_FirstFragment"
             app:destination="@id/FirstFragment" />
     </fragment>
+    <fragment
+        android:id="@+id/ProfileFragment"
+        android:name="com.example.kj_updates.ProfileFragment"
+        android:label="My Profile"
+        tools:layout="@layout/fragment_profile" />
 </navigation>

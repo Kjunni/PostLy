@@ -10,6 +10,7 @@ activityKtx = "1.8.0"
 navigationFragment = "2.6.0"
 navigationUi = "2.6.0"
 recyclerview = "1.3.2"
+google-auth = "21.5.1"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -24,6 +25,9 @@ navigation-ui = { group = "androidx.navigation", name = "navigation-ui", version
 recyclerview = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerview" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
 firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore" }
+firebase-storage = { group = "com.google.firebase", name = "firebase-storage" }
+google-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "google-auth" }
+glide = "com.github.bumptech.glide:glide:4.16.0"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

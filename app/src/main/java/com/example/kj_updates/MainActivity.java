@@ -84,6 +84,17 @@ public class MainActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
+        NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.nav_host_fragment_content_main);
+        NavController navController = navHostFragment != null ? navHostFragment.getNavController() : null;
+
+        if (id == R.id.action_profile) {
+            if (navController != null) {
+                navController.navigate(R.id.ProfileFragment);
+            }
+            return true;
+        }
+
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_logout) {
             auth.signOut();

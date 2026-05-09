@@ -39,6 +39,16 @@ public class ProfileSetupActivity extends AppCompatActivity {
             return;
         }
 
+        // Pre-fill existing data if editing
+        firestore.collection("users").document(user.getUid()).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        binding.inputUsername.setText(doc.getString("username"));
+                        binding.inputBio.setText(doc.getString("bio"));
+                        binding.buttonSaveProfile.setText("Update Profile");
+                    }
+                });
+
         binding.inputUsername.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {

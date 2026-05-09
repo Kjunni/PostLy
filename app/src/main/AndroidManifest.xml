@@ -12,6 +12,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.KJ_Updates">
         <activity
+            android:name=".StoryViewerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.KJ_Updates" />
+        <activity
+            android:name=".AddStoryActivity"
+            android:exported="false"
+            android:theme="@style/Theme.KJ_Updates" />
+        <activity
             android:name=".AddPostActivity"
             android:exported="false"
             android:theme="@style/Theme.KJ_Updates" />

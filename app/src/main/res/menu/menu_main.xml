@@ -3,6 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.example.kj_updates.MainActivity">
     <item
+        android:id="@+id/action_profile"
+        android:orderInCategory="90"
+        android:title="@string/action_profile"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_logout"
         android:orderInCategory="100"
         android:title="@string/action_logout"
